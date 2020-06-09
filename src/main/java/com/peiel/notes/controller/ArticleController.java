@@ -5,12 +5,15 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.peiel.notes.automation.mapper.ArticleMapper;
 import com.peiel.notes.automation.model.Article;
 import com.peiel.notes.util.Util;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URLDecoder;
 import java.util.List;
 
 /**
@@ -18,6 +21,7 @@ import java.util.List;
  * @version V1.0
  * @date 2020/6/8
  */
+@Slf4j
 @RestController
 @RequestMapping("/article/")
 public class ArticleController {
@@ -33,6 +37,52 @@ public class ArticleController {
                 .last("limit 20"));
         ModelMap map = new ModelMap();
         map.put("list", list);
+        return Util.jsonSuccess(map);
+    }
+
+    @GetMapping("getPublicList")
+    public JSON getPublicList(String pn) {
+        int pageSize = 10;
+        int currentPage = pn != null && pn.trim().length() > 0 ? Integer.parseInt(pn) : 1;
+        int pageNum = pageSize * (currentPage - 1);
+        List<Article> list = articleMapper.selectList(Wrappers.lambdaQuery(new Article())
+                .eq(Article::getStatus, 1)
+                .eq(Article::getIsPublic, 1)
+                .orderByDesc(Article::getId)
+                .last("LIMIT " + pageNum + "," + pageSize));
+        Integer count = articleMapper.selectCount(Wrappers.lambdaQuery(new Article())
+                .eq(Article::getStatus, 1)
+                .eq(Article::getIsPublic, 1));
+        ModelMap map = new ModelMap();
+        map.put("list", list);
+        map.put("count", count);
+        return Util.jsonSuccess(map);
+    }
+
+    @GetMapping("getDetail")
+    public JSON getDetail(Integer id) {
+        Article article = articleMapper.selectById(id);
+        ModelMap map = new ModelMap();
+        map.put("article", article);
+        return Util.jsonSuccess(map);
+    }
+
+    @GetMapping("del")
+    public JSON del(Integer id) {
+        articleMapper.updateById(Article.builder().id(id).status(0).build());
+        return Util.jsonSuccess();
+    }
+
+    @PostMapping("save")
+    public JSON save(Article article) {
+        article.setContent(URLDecoder.decode(article.getContent()));
+        if (article.getId() == null) {
+            articleMapper.insert(article);
+        } else {
+            articleMapper.updateById(article);
+        }
+        ModelMap map = new ModelMap();
+        map.put("id", article.getId());
         return Util.jsonSuccess(map);
     }
 
