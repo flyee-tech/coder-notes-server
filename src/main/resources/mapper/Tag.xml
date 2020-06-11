@@ -4,14 +4,15 @@
 
 
     <select id="getTagList" resultType="com.peiel.notes.model.TagWrapper">
-        SELECT
-          t.`id`,
-          t.`name`,
-          count(a.`article_id`) AS `count`
+        SELECT t.`id`,
+               t.`name`,
+               count(a.`article_id`) AS `count`
         FROM tag AS t
         LEFT JOIN `article_tag` AS a ON t.`id` = a.`tag_id`
+        LEFT JOIN `article` AS ac ON a.`article_id` = ac.`id`
         WHERE t.`status` = 1
-          AND a.`status` = 1
+          AND ac.`status` = 1
+          <if test="idx != null" > AND ac.`is_public` = #{idx} </if>
         GROUP BY t.`name`
         HAVING `count` > 0;
     </select>

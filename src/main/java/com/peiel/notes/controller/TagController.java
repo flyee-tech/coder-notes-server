@@ -34,8 +34,8 @@ public class TagController {
     private TagDao tagDao;
 
     @GetMapping("getTagList")
-    public JSON getTagList() {
-        List<TagWrapper> list = tagDao.getTagList();
+    public JSON getTagList(Integer idx) {
+        List<TagWrapper> list = tagDao.getTagList(idx);
         list = list.stream().sorted(Comparator.comparing(Tag::getName)).collect(Collectors.toList());
         ModelMap map = new ModelMap();
         map.put("list", list);

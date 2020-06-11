@@ -1,6 +1,7 @@
 package com.peiel.notes.dao;
 
 import com.peiel.notes.model.TagWrapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -11,6 +12,6 @@ import java.util.List;
  */
 public interface TagDao {
 
-    List<TagWrapper> getTagList();
+    List<TagWrapper> getTagList(@Param("idx") Integer idx);
 
 }
