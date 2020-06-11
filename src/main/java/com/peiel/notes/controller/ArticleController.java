@@ -35,8 +35,11 @@ public class ArticleController {
     private ArticleMapper articleMapper;
     @Autowired
     private ArticleTagMapper articleTagMapper;
+    @Autowired
+    private TagMapper tagMapper;
 
     @GetMapping("getList")
+
     public JSON getList() {
         List<Article> list = articleMapper.selectList(Wrappers.lambdaQuery(new Article())
                 .eq(Article::getStatus, 1)
@@ -97,7 +100,14 @@ public class ArticleController {
     @GetMapping("getDetail")
     public JSON getDetail(Integer id) {
         Article article = articleMapper.selectById(id);
+        List<Integer> ids = articleTagMapper.selectList(
+                Wrappers.lambdaQuery(new ArticleTag()).eq(ArticleTag::getArticleId, id))
+                .stream().map(ArticleTag::getTagId).collect(Collectors.toList());
         ModelMap map = new ModelMap();
+        if (ids.size() != 0) {
+            List<Tag> tags = tagMapper.selectList(Wrappers.lambdaQuery(new Tag()).in(Tag::getId, ids));
+            map.put("tags", tags);
+        }
         map.put("article", article);
         return Util.jsonSuccess(map);
     }
