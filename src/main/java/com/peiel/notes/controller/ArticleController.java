@@ -41,11 +41,14 @@ public class ArticleController {
 
     @GetMapping("getList")
 
-    public JSON getList() {
-        List<Article> list = articleMapper.selectList(Wrappers.lambdaQuery(new Article())
-                .eq(Article::getStatus, 1)
-                .orderByDesc(Article::getId)
-                .last("limit 20"));
+    public JSON getList(String k) {
+        LambdaQueryWrapper<Article> wrapper = Wrappers.lambdaQuery(new Article())
+                .eq(Article::getStatus, 1);
+        if (k != null) {
+            wrapper = wrapper.like(Article::getName, k);
+        }
+        List<Article> list = articleMapper.selectList(
+                wrapper.orderByDesc(Article::getId).last("limit 20"));
         ModelMap map = new ModelMap();
         map.put("list", list);
         return Util.jsonSuccess(map);
