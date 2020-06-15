@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
 import java.util.List;
-import java.util.SplittableRandom;
 import java.util.stream.Collectors;
 
 /**
@@ -47,7 +46,7 @@ public class ArticleController {
             wrapper = wrapper.like(Article::getName, k);
         }
         List<Article> list = articleMapper.selectList(wrapper
-                .orderByDesc(Article::getId)
+                        .orderByDesc(Article::getCreatedTime)
 //                .last("limit 20")
         );
         ModelMap map = new ModelMap();
@@ -63,7 +62,7 @@ public class ArticleController {
         List<Article> list = articleMapper.selectList(Wrappers.lambdaQuery(new Article())
                 .eq(Article::getStatus, 1)
                 .eq(Article::getIsPublic, 1)
-                .orderByDesc(Article::getId)
+                .orderByDesc(Article::getCreatedTime)
                 .last("LIMIT " + pageNum + "," + pageSize));
         Integer count = articleMapper.selectCount(Wrappers.lambdaQuery(new Article())
                 .eq(Article::getStatus, 1)
@@ -91,7 +90,7 @@ public class ArticleController {
             wrapper = wrapper.eq(Article::getIsPublic, 1);
         }
         Integer count = articleMapper.selectCount(wrapper);
-        List<Article> list = articleMapper.selectList(wrapper.orderByDesc(Article::getId).last("LIMIT " + pageNum + "," + pageSize));
+        List<Article> list = articleMapper.selectList(wrapper.orderByDesc(Article::getCreatedTime).last("LIMIT " + pageNum + "," + pageSize));
 
         ModelMap map = new ModelMap();
         map.put("list", list);
