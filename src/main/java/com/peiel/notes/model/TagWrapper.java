@@ -17,9 +17,9 @@ public class TagWrapper extends Tag {
     private String style;
 
     public String getStyle() {
-        String defaultFont = "font-size: 20px;";
+        String defaultFont = "font-size: 12px;";
         if (count != null && count > 0) {
-            return "font-size: " + (20 + count * 2) + "px;";
+            return "font-size: " + (16 + count) + "px;";
         }
 
         return defaultFont;

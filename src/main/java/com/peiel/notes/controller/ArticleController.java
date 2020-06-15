@@ -46,8 +46,10 @@ public class ArticleController {
         if (k != null) {
             wrapper = wrapper.like(Article::getName, k);
         }
-        List<Article> list = articleMapper.selectList(
-                wrapper.orderByDesc(Article::getId).last("limit 20"));
+        List<Article> list = articleMapper.selectList(wrapper
+                .orderByDesc(Article::getId)
+//                .last("limit 20")
+        );
         ModelMap map = new ModelMap();
         map.put("list", list);
         return Util.jsonSuccess(map);
@@ -88,9 +90,9 @@ public class ArticleController {
         if (idx != null && idx == 1) {
             wrapper = wrapper.eq(Article::getIsPublic, 1);
         }
+        Integer count = articleMapper.selectCount(wrapper);
         List<Article> list = articleMapper.selectList(wrapper.orderByDesc(Article::getId).last("LIMIT " + pageNum + "," + pageSize));
 
-        Integer count = articleMapper.selectCount(wrapper);
         ModelMap map = new ModelMap();
         map.put("list", list);
         map.put("count", count);
@@ -137,6 +139,9 @@ public class ArticleController {
             String[] ts = tags.split(" ");
             for (String tag : ts) {
                 tag = tag.replace("#", "").trim();
+                if (tag.equals("")) {
+                    continue;
+                }
                 // 查看标签库是否存在标签
                 Tag t = tagMapper.selectOne(Wrappers.lambdaQuery(new Tag()).eq(Tag::getName, tag));
                 if (t == null) {
