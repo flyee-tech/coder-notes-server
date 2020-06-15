@@ -9,17 +9,16 @@ import com.peiel.notes.automation.mapper.TagMapper;
 import com.peiel.notes.automation.model.Article;
 import com.peiel.notes.automation.model.ArticleTag;
 import com.peiel.notes.automation.model.Tag;
+import com.peiel.notes.model.ArticleSaveWrapper;
 import com.peiel.notes.util.Util;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
 import java.util.List;
+import java.util.SplittableRandom;
 import java.util.stream.Collectors;
 
 /**
@@ -123,7 +122,7 @@ public class ArticleController {
     }
 
     @PostMapping("save")
-    public JSON save(Article article, String tags) {
+    public JSON save(@RequestBody ArticleSaveWrapper article) {
         article.setContent(URLDecoder.decode(article.getContent()));
         if (article.getId() == null) {
             articleMapper.insert(article);
@@ -131,6 +130,7 @@ public class ArticleController {
             articleMapper.updateById(article);
         }
 
+        String tags = article.getTags();
         if (tags != null) {
             articleTagMapper.update(ArticleTag.builder().status(0).build(), Wrappers.lambdaQuery(new ArticleTag())
                     .eq(ArticleTag::getArticleId, article.getId()));
