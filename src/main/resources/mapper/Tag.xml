@@ -12,6 +12,7 @@
         LEFT JOIN `article` AS ac ON a.`article_id` = ac.`id`
         WHERE t.`status` = 1
           AND a.`status` = 1
+          AND ac.`status` = 1
           <if test="idx != null" > AND ac.`is_public` = #{idx} </if>
         GROUP BY t.`name`
         HAVING `count` > 0;
