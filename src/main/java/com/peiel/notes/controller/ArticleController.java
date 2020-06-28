@@ -9,7 +9,9 @@ import com.peiel.notes.automation.mapper.TagMapper;
 import com.peiel.notes.automation.model.Article;
 import com.peiel.notes.automation.model.ArticleTag;
 import com.peiel.notes.automation.model.Tag;
+import com.peiel.notes.es.ElasticsearchArticleRepository;
 import com.peiel.notes.model.ArticleSaveWrapper;
+import com.peiel.notes.model.EsArticle;
 import com.peiel.notes.util.Util;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +38,10 @@ public class ArticleController {
     private ArticleTagMapper articleTagMapper;
     @Autowired
     private TagMapper tagMapper;
+    @Autowired
+    private ElasticsearchArticleRepository elasticsearchArticleRepository;
 
     @GetMapping("getList")
-
     public JSON getList(String k) {
         LambdaQueryWrapper<Article> wrapper = Wrappers.lambdaQuery(new Article())
                 .eq(Article::getStatus, 1);
@@ -53,6 +56,18 @@ public class ArticleController {
         map.put("list", list);
         return Util.jsonSuccess(map);
     }
+
+    @GetMapping("searchList")
+    public JSON searchList(String kw) {
+        if (kw == null) {
+            kw = "";
+        }
+        List<EsArticle> list = elasticsearchArticleRepository.findByNameOrContent(kw, kw).stream().limit(5).collect(Collectors.toList());
+        ModelMap map = new ModelMap();
+        map.put("list", list);
+        return Util.jsonSuccess(map);
+    }
+
 
     @GetMapping("getPublicList")
     public JSON getPublicList(String pn) {
