@@ -13,5 +13,6 @@ import java.util.List;
 public interface ElasticsearchArticleRepository extends ElasticsearchRepository<EsArticle, Long> {
 
     List<EsArticle> findByNameOrContent(String name, String content);
+    List<EsArticle> findByName(String name);
 
 }

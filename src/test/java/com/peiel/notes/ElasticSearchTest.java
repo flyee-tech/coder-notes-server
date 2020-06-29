@@ -8,12 +8,17 @@ import com.peiel.notes.automation.model.Article;
 import com.peiel.notes.es.ElasticsearchArticleRepository;
 import com.peiel.notes.model.EsArticle;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.Lists;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.IndexOperations;
 import org.springframework.data.elasticsearch.core.document.Document;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +44,7 @@ public class ElasticSearchTest {
         IndexOperations idxOpt = esTemplate.indexOps(EsArticle.class);
         boolean d = idxOpt.delete();
         System.out.println("isDelete : " + d);
-        boolean b = idxOpt.create(Document.parse("{\"analysis\":{\"analyzer\":{\"pinyin_analyzer\":{\"tokenizer\":\"my_pinyin\"}},\"tokenizer\":{\"my_pinyin\":{\"type\":\"pinyin\",\"keep_separate_first_letter\":false,\"keep_full_pinyin\":true,\"keep_original\":true,\"limit_first_letter_length\":16,\"lowercase\":true,\"remove_duplicated_term\":true}}}}"));
+        boolean b = idxOpt.create(Document.parse("{\"number_of_replicas\":\"0\",\"number_of_shards\":\"1\",\"analysis\":{\"analyzer\":{\"ik_pinyin_analyzer\":{\"tokenizer\":\"my_ik_pinyin\",\"filter\":\"pinyin_first_letter_and_full_pinyin_filter\"},\"pinyin_analyzer\":{\"tokenizer\":\"my_pinyin\"}},\"tokenizer\":{\"my_ik_pinyin\":{\"type\":\"ik_max_word\"},\"my_pinyin\":{\"type\":\"pinyin\",\"keep_first_letter\":true,\"keep_separate_first_letter\":false,\"keep_full_pinyin\":false,\"keep_joined_full_pinyin\":true,\"keep_none_chinese\":true,\"none_chinese_pinyin_tokenize\":false,\"keep_none_chinese_in_joined_full_pinyin\":true,\"keep_original\":false,\"limit_first_letter_length\":16,\"lowercase\":true,\"trim_whitespace\":true,\"remove_duplicated_term\":true}},\"filter\":{\"pinyin_first_letter_and_full_pinyin_filter\":{\"type\":\"pinyin\",\"keep_first_letter\":true,\"keep_separate_first_letter\":false,\"keep_full_pinyin\":false,\"keep_joined_full_pinyin\":true,\"keep_none_chinese\":true,\"none_chinese_pinyin_tokenize\":false,\"keep_none_chinese_in_joined_full_pinyin\":true,\"keep_original\":false,\"limit_first_letter_length\":16,\"lowercase\":true,\"trim_whitespace\":true,\"remove_duplicated_term\":true}}}}"));
         System.out.println("idCreate : " + b);
         Document document = idxOpt.createMapping(EsArticle.class);
         System.out.println(JSON.toJSONString(document));
@@ -78,9 +83,26 @@ public class ElasticSearchTest {
 
     @Test
     public void testQuery() {
-        String q = "haxi";
-        List<EsArticle> list = elasticsearchArticleRepository.findByNameOrContent(q, q).stream().limit(5).collect(Collectors.toList());
-        System.out.println(JSON.toJSONString(list));
+        String q = "jg";
+//        List<EsArticle> list = elasticsearchArticleRepository.findByNameOrContent(q, q).stream().limit(5).collect(Collectors.toList());
+//        List<EsArticle> list = elasticsearchArticleRepository.findByName(q).stream().limit(5).collect(Collectors.toList());
+//        for (EsArticle esArticle : list) {
+//            System.out.println(esArticle.getName());
+//        }
+
+        NativeSearchQueryBuilder builder = new NativeSearchQueryBuilder();
+        NativeSearchQuery query = builder.withQuery(QueryBuilders.boolQuery()
+                .should(QueryBuilders.matchQuery("name", q)).boost(2)
+                .should(QueryBuilders.matchQuery("name.ik", q)).boost(1)
+                .should(QueryBuilders.matchQuery("name.pinyin", q).boost(2))
+                .should(QueryBuilders.matchQuery("name.ik_pinyin", q).boost(1)))
+                .build();
+        log.info("DSL:{}", query.getQuery().toString());
+        Iterable<EsArticle> it = elasticsearchArticleRepository.search(query);
+        Lists.newArrayList(it);
+        for (EsArticle esArticle : it) {
+            System.out.println(esArticle.getName());
+        }
     }
 
 }

@@ -14,13 +14,17 @@ import com.peiel.notes.model.ArticleSaveWrapper;
 import com.peiel.notes.model.EsArticle;
 import com.peiel.notes.util.Util;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * @author Peiel
@@ -59,10 +63,26 @@ public class ArticleController {
 
     @GetMapping("searchList")
     public JSON searchList(String kw) {
-        if (kw == null) {
-            kw = "";
+        if (kw == null || kw.equals("")) {
+            return this.getList(kw);
         }
-        List<EsArticle> list = elasticsearchArticleRepository.findByNameOrContent(kw, kw).stream().limit(5).collect(Collectors.toList());
+
+        NativeSearchQueryBuilder builder = new NativeSearchQueryBuilder();
+        NativeSearchQuery query = builder.withQuery(QueryBuilders.boolQuery()
+                .should(QueryBuilders.matchQuery("name", kw)).boost(2)
+                .should(QueryBuilders.matchQuery("name.ik", kw)).boost(1)
+                .should(QueryBuilders.matchQuery("name.pinyin", kw).boost(2))
+                .should(QueryBuilders.matchQuery("name.ik_pinyin", kw).boost(1))
+                .should(QueryBuilders.matchQuery("content", kw)).boost(2)
+                .should(QueryBuilders.matchQuery("content.ik", kw)).boost(1)
+                .should(QueryBuilders.matchQuery("content.pinyin", kw).boost(2))
+                .should(QueryBuilders.matchQuery("content.ik_pinyin", kw).boost(1)))
+                .build();
+        log.info("DSL:{}", query.getQuery().toString());
+        Iterable<EsArticle> it = elasticsearchArticleRepository.search(query);
+        List<EsArticle> list = StreamSupport.stream(it.spliterator(), false)
+                .limit(10)
+                .collect(Collectors.toList());
         ModelMap map = new ModelMap();
         map.put("list", list);
         return Util.jsonSuccess(map);
