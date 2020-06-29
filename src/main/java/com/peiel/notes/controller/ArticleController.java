@@ -63,26 +63,29 @@ public class ArticleController {
 
     @GetMapping("searchList")
     public JSON searchList(String kw) {
+        List<EsArticle> list;
         if (kw == null || kw.equals("")) {
-            return this.getList(kw);
+            Iterable<EsArticle> all = elasticsearchArticleRepository.findAll();
+            list = StreamSupport.stream(all.spliterator(), false)
+                    .collect(Collectors.toList());
+        } else {
+            NativeSearchQueryBuilder builder = new NativeSearchQueryBuilder();
+            NativeSearchQuery query = builder.withQuery(QueryBuilders.boolQuery()
+                    .should(QueryBuilders.matchQuery("name", kw)).boost(2)
+                    .should(QueryBuilders.matchQuery("name.ik", kw)).boost(1)
+                    .should(QueryBuilders.matchQuery("name.pinyin", kw).boost(2))
+                    .should(QueryBuilders.matchQuery("name.ik_pinyin", kw).boost(1))
+                    .should(QueryBuilders.matchQuery("content", kw)).boost(2)
+                    .should(QueryBuilders.matchQuery("content.ik", kw)).boost(1)
+                    .should(QueryBuilders.matchQuery("content.pinyin", kw).boost(2))
+                    .should(QueryBuilders.matchQuery("content.ik_pinyin", kw).boost(1)))
+                    .build();
+            log.info("DSL:{}", query.getQuery().toString());
+            Iterable<EsArticle> it = elasticsearchArticleRepository.search(query);
+            list = StreamSupport.stream(it.spliterator(), false)
+                    .limit(10)
+                    .collect(Collectors.toList());
         }
-
-        NativeSearchQueryBuilder builder = new NativeSearchQueryBuilder();
-        NativeSearchQuery query = builder.withQuery(QueryBuilders.boolQuery()
-                .should(QueryBuilders.matchQuery("name", kw)).boost(2)
-                .should(QueryBuilders.matchQuery("name.ik", kw)).boost(1)
-                .should(QueryBuilders.matchQuery("name.pinyin", kw).boost(2))
-                .should(QueryBuilders.matchQuery("name.ik_pinyin", kw).boost(1))
-                .should(QueryBuilders.matchQuery("content", kw)).boost(2)
-                .should(QueryBuilders.matchQuery("content.ik", kw)).boost(1)
-                .should(QueryBuilders.matchQuery("content.pinyin", kw).boost(2))
-                .should(QueryBuilders.matchQuery("content.ik_pinyin", kw).boost(1)))
-                .build();
-        log.info("DSL:{}", query.getQuery().toString());
-        Iterable<EsArticle> it = elasticsearchArticleRepository.search(query);
-        List<EsArticle> list = StreamSupport.stream(it.spliterator(), false)
-                .limit(10)
-                .collect(Collectors.toList());
         ModelMap map = new ModelMap();
         map.put("list", list);
         return Util.jsonSuccess(map);
