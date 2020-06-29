@@ -42,25 +42,27 @@ public class ArticleController {
     private EsService esService;
 
     @GetMapping("getList")
-    public JSON getList(String k) {
-        LambdaQueryWrapper<Article> wrapper = Wrappers.lambdaQuery(new Article())
-                .eq(Article::getStatus, 1);
-        if (k != null) {
-            wrapper = wrapper.like(Article::getName, k);
-        }
-        List<Article> list = articleMapper.selectList(wrapper
-                        .orderByDesc(Article::getCreatedTime)
-//                .last("limit 20")
-        );
+    public JSON getList() {
+        List<Article> list = articleMapper.selectList(Wrappers.lambdaQuery(new Article())
+                .eq(Article::getStatus, 1)
+                .orderByDesc(Article::getId)
+                .last("limit 20"));
+        list = list.stream().peek(this::subContent).collect(Collectors.toList());
         ModelMap map = new ModelMap();
         map.put("list", list);
         return Util.jsonSuccess(map);
     }
 
+    private void subContent(Article article) {
+        if (article.getContent().length() > 50) {
+            article.setContent(article.getContent().substring(0, 40));
+        }
+    }
+
     @GetMapping("searchList")
     public JSON searchList(String kw) {
         if (kw == null || kw.equals("")) {
-            return getList(kw);
+            return getList();
         }
         List<EsArticle> list = esService.searchArticleList(kw);
         ModelMap map = new ModelMap();

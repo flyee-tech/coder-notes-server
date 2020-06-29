@@ -59,18 +59,20 @@ public class EsServiceImpl implements EsService {
         List<EsArticle> result = new ArrayList<>();
         for (SearchHit<EsArticle> searchHit : searchHits) {
             Map<String, List<String>> highlightFields = searchHit.getHighlightFields();
-            EsArticle esArticle = searchHit.getContent();
-            for (String key : highlightFields.keySet()) {
-                if (key.startsWith("name")) {
-                    esArticle.setName(highlightFields.get(key).get(0));
+            if (!highlightFields.isEmpty()) {
+                EsArticle esArticle = searchHit.getContent();
+                for (String key : highlightFields.keySet()) {
+                    if (key.startsWith("name")) {
+                        esArticle.setName(highlightFields.get(key).get(0));
+                    }
                 }
-            }
-            for (String key : highlightFields.keySet()) {
-                if (key.startsWith("content")) {
-                    esArticle.setContent(highlightFields.get(key).get(0));
+                for (String key : highlightFields.keySet()) {
+                    if (key.startsWith("content")) {
+                        esArticle.setContent(highlightFields.get(key).get(0));
+                    }
                 }
+                result.add(esArticle);
             }
-            result.add(esArticle);
         }
         return result;
     }
