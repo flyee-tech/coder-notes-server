@@ -50,7 +50,7 @@ public class EsServiceImpl implements EsService {
                         new HighlightBuilder.Field("content.ik"),
                         new HighlightBuilder.Field("content.pinyin"),
                         new HighlightBuilder.Field("content.ik_pinyin"))
-                .withHighlightBuilder(new HighlightBuilder().preTags("<span style='color:red'>").postTags("</span>"))
+                .withHighlightBuilder(new HighlightBuilder().preTags("<span style='color:red;font-size:20px;'>").postTags("</span>"))
                 .build();
         log.debug("DSL:{}", query.getQuery().toString());
 
@@ -58,9 +58,12 @@ public class EsServiceImpl implements EsService {
 
         List<EsArticle> result = new ArrayList<>();
         for (SearchHit<EsArticle> searchHit : searchHits) {
+            EsArticle esArticle = searchHit.getContent();
+            if (esArticle.getContent().length() > 50) {
+                esArticle.setContent(esArticle.getContent().substring(0, 40));
+            }
             Map<String, List<String>> highlightFields = searchHit.getHighlightFields();
             if (!highlightFields.isEmpty()) {
-                EsArticle esArticle = searchHit.getContent();
                 for (String key : highlightFields.keySet()) {
                     if (key.startsWith("name")) {
                         esArticle.setName(highlightFields.get(key).get(0));
