@@ -7,22 +7,24 @@ import com.peiel.notes.automation.mapper.ArticleMapper;
 import com.peiel.notes.automation.model.Article;
 import com.peiel.notes.es.ElasticsearchArticleRepository;
 import com.peiel.notes.model.EsArticle;
+import com.peiel.notes.service.EsService;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.util.Lists;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
-import org.springframework.data.elasticsearch.core.IndexOperations;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.elasticsearch.core.*;
 import org.springframework.data.elasticsearch.core.document.Document;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
  * @author Peiel
@@ -38,6 +40,8 @@ public class ElasticSearchTest {
     private ElasticsearchArticleRepository elasticsearchArticleRepository;
     @Autowired
     private ArticleMapper articleMapper;
+    @Autowired
+    private EsService esService;
 
     @Test
     public void createInxAndMapping() {
@@ -90,19 +94,13 @@ public class ElasticSearchTest {
 //            System.out.println(esArticle.getName());
 //        }
 
-        NativeSearchQueryBuilder builder = new NativeSearchQueryBuilder();
-        NativeSearchQuery query = builder.withQuery(QueryBuilders.boolQuery()
-                .should(QueryBuilders.matchQuery("name", q)).boost(2)
-                .should(QueryBuilders.matchQuery("name.ik", q)).boost(1)
-                .should(QueryBuilders.matchQuery("name.pinyin", q).boost(2))
-                .should(QueryBuilders.matchQuery("name.ik_pinyin", q).boost(1)))
-                .build();
-        log.info("DSL:{}", query.getQuery().toString());
-        Iterable<EsArticle> it = elasticsearchArticleRepository.search(query);
-        Lists.newArrayList(it);
-        for (EsArticle esArticle : it) {
-            System.out.println(esArticle.getName());
-        }
+        esService.searchArticleList(q);
+
+//        Iterable<EsArticle> it = elasticsearchArticleRepository.search(query);
+//        Lists.newArrayList(it);
+//        for (EsArticle esArticle : it) {
+//            System.out.println(esArticle.getName());
+//        }
     }
 
 }
