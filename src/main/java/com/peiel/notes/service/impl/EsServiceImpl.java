@@ -1,5 +1,10 @@
 package com.peiel.notes.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.peiel.notes.automation.mapper.ArticleMapper;
+import com.peiel.notes.automation.model.Article;
+import com.peiel.notes.es.ElasticsearchArticleRepository;
 import com.peiel.notes.model.EsArticle;
 import com.peiel.notes.service.EsService;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +33,10 @@ import java.util.Map;
 public class EsServiceImpl implements EsService {
     @Autowired
     private ElasticsearchOperations operations;
+    @Autowired
+    private ElasticsearchArticleRepository elasticsearchArticleRepository;
+    @Autowired
+    private ArticleMapper articleMapper;
 
     @Override
     public List<EsArticle> searchArticleList(String kw) {
@@ -79,4 +88,26 @@ public class EsServiceImpl implements EsService {
         }
         return result;
     }
+
+    @Override
+    public void rebuildIndex() {
+        elasticsearchArticleRepository.deleteAll();
+        LambdaQueryWrapper<Article> wrapper = Wrappers.lambdaQuery(new Article()).eq(Article::getStatus, 1);
+        List<Article> source = articleMapper.selectList(wrapper);
+        List<EsArticle> dest = new ArrayList<>();
+        for (Article article : source) {
+            EsArticle esArticle = new EsArticle();
+            esArticle.setId(article.getId());
+            esArticle.setName(article.getName());
+            esArticle.setContent(article.getContent());
+            esArticle.setType(article.getType());
+            esArticle.setIsPublic(article.getIsPublic());
+            esArticle.setStatus(article.getStatus());
+            esArticle.setUpdatedTime(article.getUpdatedTime());
+            esArticle.setCreatedTime(article.getCreatedTime());
+            dest.add(esArticle);
+        }
+        elasticsearchArticleRepository.saveAll(dest);
+    }
+
 }

@@ -58,6 +58,7 @@ public class ElasticSearchTest {
 
     @Test
     public void test() {
+        elasticsearchArticleRepository.deleteAll();
         LambdaQueryWrapper<Article> wrapper = Wrappers.lambdaQuery(new Article()).eq(Article::getStatus, 1);
         List<Article> source = articleMapper.selectList(wrapper);
 

@@ -13,5 +13,6 @@ public interface EsService {
 
     List<EsArticle> searchArticleList(String kw);
 
+    void rebuildIndex();
 
 }

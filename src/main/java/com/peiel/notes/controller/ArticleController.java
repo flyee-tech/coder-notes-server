@@ -136,6 +136,7 @@ public class ArticleController {
     @GetMapping("del")
     public JSON del(Integer id) {
         articleMapper.updateById(Article.builder().id(id).status(0).build());
+        esService.rebuildIndex();
         return Util.jsonSuccess();
     }
 
@@ -168,7 +169,7 @@ public class ArticleController {
                 articleTagMapper.insert(ArticleTag.builder().articleId(article.getId()).tagId(t.getId()).build());
             }
         }
-
+        esService.rebuildIndex();
         ModelMap map = new ModelMap();
         map.put("id", article.getId());
         return Util.jsonSuccess(map);
