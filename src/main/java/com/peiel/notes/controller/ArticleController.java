@@ -47,15 +47,26 @@ public class ArticleController {
                 .eq(Article::getStatus, 1)
                 .orderByDesc(Article::getId)
                 .last("limit 20"));
-        list = list.stream().peek(this::subContent).collect(Collectors.toList());
+        list = list.stream().peek(this::replaceContent).peek(this::subContent).collect(Collectors.toList());
         ModelMap map = new ModelMap();
         map.put("list", list);
         return Util.jsonSuccess(map);
     }
 
+    private void replaceContent(Object object) {
+        if (object instanceof Article) {
+            Article article = (Article) object;
+            article.setContent(article.getContent().replaceAll("#", "").replaceAll("`*", "").trim());
+        }
+        if (object instanceof EsArticle) {
+            EsArticle article = (EsArticle) object;
+            article.setContent(article.getContent().replaceAll("#", "").replaceAll("`*", "").trim());
+        }
+    }
+
     private void subContent(Article article) {
         if (article.getContent().length() > 50) {
-            article.setContent(article.getContent().substring(0, 40));
+            article.setContent(article.getContent().substring(0, 40) + " ...");
         }
     }
 
@@ -65,6 +76,7 @@ public class ArticleController {
             return getList();
         }
         List<EsArticle> list = esService.searchArticleList(kw);
+        list = list.stream().peek(this::replaceContent).collect(Collectors.toList());
         ModelMap map = new ModelMap();
         map.put("list", list);
         return Util.jsonSuccess(map);
